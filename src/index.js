@@ -11,7 +11,7 @@ import './style.css';
 
 class Game extends Phaser.Game {
   constructor() {
-    super(800, 800, Phaser.AUTO, 'game-container');
+    super(800, 800, Phaser.CANVAS, 'game-container');
 
     this.state.add('Boot', Boot, false);
     this.state.add('Preload', Preload, false);

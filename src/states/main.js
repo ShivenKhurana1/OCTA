@@ -39,6 +39,9 @@ class Main extends Phaser.State {
     this.balls = [];
     this.obstacles = [];
 
+    // Update level display
+    this.ui.updateLevel(this.level);
+
     // Score
     this.timer = this.game.time.create(false);
     this.hits = 0;
@@ -129,6 +132,9 @@ class Main extends Phaser.State {
     this.timer.start();
     this.hits = 0;
 
+    // Update level display
+    this.ui.updateLevel(this.level);
+
     this.started = true;
   }
 
@@ -176,6 +182,7 @@ class Main extends Phaser.State {
       if (this.nextLevelCounter <= 0) {
         this.musicManager.stopLevel(this.level);
         this.level++;
+        this.ui.updateLevel(this.level);
         this.ballsOut = false;
         this.updateCursor();
         this.progress.complete();

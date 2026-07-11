@@ -43,6 +43,16 @@ class UI {
     this._makeScoreDisplay('time', CONSTANTS.SCORE_TIME_POSITION);
     this._makeScoreDisplay('hits', CONSTANTS.SCORE_HITS_POSITION);
     this.score.visible = false;
+
+    // Level display
+    this.levelText = this.game.add.text(40, 40, 'LEVEL 1', {
+      align: 'left',
+      fill: 'white',
+      font: "24px 'springsteel'"
+    });
+    this.levelText.anchor.x = 0;
+    this.levelText.anchor.y = 0;
+    this.levelText.alpha = CONSTANTS.UI_OPACITY;
   }
 
   hideTitle() {
@@ -74,7 +84,7 @@ class UI {
       bestTime = time;
     }
     this.scoreLabels.time.best.text = this._writeTime(bestTime);
-    
+
     this.scoreLabels.hits.value.text = `${hits}`;
     let bestHits = localStorage.getItem('inoctave.hits');
     if (!bestHits || hits < bestHits) {
@@ -84,6 +94,10 @@ class UI {
     }
     this.scoreLabels.hits.best.text = bestHits;
     this.scoreLabels.hits.perfect.visible = hits === 0;
+  }
+
+  updateLevel(level) {
+    this.levelText.text = `LEVEL ${level}`;
   }
 
   _writeTime(time) {

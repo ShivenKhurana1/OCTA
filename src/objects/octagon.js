@@ -119,10 +119,10 @@ class Octagon {
       wall.updatePosition(scaledRadius, stretchX, stretchY);
     }
 
-    // ── 4. Laser Gate Flickering (Only on Level 2+) ──
-    if (currentLevel >= 2) {
-      // Loop cycle: 0-120frames (Warning phase), 120-240frames (Laser active/firing phase), 240-340frames (Off cooldown)
-      const cycle = this.laserTimer % 340;
+    // ── 4. Laser Gate Flickering (Only on Level 4+) ──
+    if (currentLevel >= 4) {
+      // Loop cycle: 0-120frames (Warning phase), 120-150frames (Laser active/firing phase - 0.5s), 150-400frames (Off cooldown)
+      const cycle = this.laserTimer % 400;
       
       if (cycle === 0) {
         // Pick random start wall index
@@ -153,7 +153,7 @@ class Octagon {
         this.laserWarning = false;
         this.laserActive = true;
         this.state.soundManager.play('shoot'); 
-      } else if (cycle === 240) {
+      } else if (cycle === 150) {
         this.laserActive = false;
         this.laserWarning = false;
       }
