@@ -9,7 +9,7 @@ class Instrument {
         const pianoReverb = new Tone.Reverb({
           decay: 6,
           wet: 0.4
-        }).toMaster();
+        }).toDestination();
         this.instruments.piano = new Tone.Sampler(
           {
             A3: 'A3v7.wav',
@@ -35,7 +35,7 @@ class Instrument {
         const xylophoneReverb = new Tone.Reverb({
           decay: 2,
           wet: 0.2
-        }).toMaster();
+        }).toDestination();
         this.instruments.xylophone = new Tone.Sampler(
           {
             G3: 'B15.wav',
@@ -66,7 +66,7 @@ class Instrument {
         const guitarReverb = new Tone.Reverb({
           decay: 7,
           wet: 0.6
-        }).toMaster();
+        }).toDestination();
         this.instruments.guitar = new Tone.Sampler(
           {
             A3: 'A2.wav',
@@ -103,7 +103,11 @@ class Instrument {
   }
 
   play(note, instrument) {
-    this.instruments[instrument].triggerAttackRelease(note, 0.4);
+    try {
+      this.instruments[instrument].triggerAttackRelease(note, 0.4);
+    } catch (error) {
+      console.error('Error playing instrument:', error);
+    }
   }
 }
 

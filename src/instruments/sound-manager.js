@@ -6,7 +6,7 @@ class SoundManager{
     this.sounds = {};
 
     for (let sound of ['start', 'shoot', 'hit']) {
-      this.sounds[sound] = new Tone.Player().toMaster();
+      this.sounds[sound] = new Tone.Player().toDestination();
       this.requests.push(this.sounds[sound].load(`./assets/sounds/${sound}.ogg`));
     }
   }
@@ -16,7 +16,11 @@ class SoundManager{
   }
 
   play(sound) {
-    this.sounds[sound].start();
+    try {
+      this.sounds[sound].start();
+    } catch (error) {
+      console.error('Error playing sound:', error);
+    }
   }
 }
 export default SoundManager;
