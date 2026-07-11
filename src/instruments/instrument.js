@@ -83,6 +83,10 @@ class Instrument {
 
   play(note, instrument) {
     try {
+      if (!this.instruments || !this.instruments[instrument]) {
+        console.warn('Instrument not loaded:', instrument);
+        return;
+      }
       this.instruments[instrument].triggerAttackRelease(note, 0.4);
     } catch (error) {
       console.error('Error playing instrument:', error);

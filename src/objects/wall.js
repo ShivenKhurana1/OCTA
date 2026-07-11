@@ -44,7 +44,9 @@ class Wall {
     if (body.sprite.data.type === 'ball') {
       this.gradient.color = body.sprite.data.color; 
       this.gradient.level = 0;
-      this.instrument.play(this.note, CONSTANTS.INSTRUMENTS[body.sprite.data.ball.type]);
+      if (this.instrument) {
+        this.instrument.play(this.note, CONSTANTS.INSTRUMENTS[body.sprite.data.ball.type]);
+      }
       this.state.hitWall();
     }
   }

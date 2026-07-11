@@ -73,8 +73,12 @@ class Main extends Phaser.State {
 
   handleSpacePress() {
     // Initialize audio context on first user interaction
-    if (Tone && Tone.context && Tone.context.state !== 'running') {
-      Tone.context.resume().catch(e => console.warn('Audio context resume failed:', e));
+    try {
+      if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state !== 'running') {
+        Tone.context.resume().catch(e => console.warn('Audio context resume failed:', e));
+      }
+    } catch (e) {
+      console.warn('Audio context check failed:', e);
     }
     
     if (!this.started) {

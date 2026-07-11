@@ -8,6 +8,14 @@ body {
   background-color: black;
 }
 
+#game-container {
+  position: relative;
+}
+
+canvas {
+  display: block;
+}
+
  @font-face {
   font-family: springsteel;
   src: url(../assets/springsteel_light/springsteel-lig.otf);

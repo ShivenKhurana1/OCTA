@@ -73,10 +73,17 @@ class Tutorial extends Phaser.State {
 
     // ── Tutorial hint layer (on top of everything) ──────────────────────
     this._hintGroup = this.game.add.group();
+    this._arrowGroup = this.game.add.group();
     this._mousePixels = 0;
     this._wallHitsTotal = 0;
     this._hasCaught = false;
-
+    
+    // Tutorial progress indicator
+    this._createProgressIndicator();
+    
+    // Skip button
+    this._createSkipButton();
+    
     // Start at step 0
     this._step = -1;
     this._advanceStep();
@@ -89,58 +96,63 @@ class Tutorial extends Phaser.State {
   _advanceStep() {
     this._step += 1;
     this._clearHint();
-
+    this._updateProgressIndicator();
     switch (this._step) {
 
-      // ── Step 0: Move ─────────────────────────────────────────────────
-      case 0:
+        // ── Step 0: Move ─────────────────────────────────────────────────
+        case 0:
         this._showHint('Move your mouse to guide the player', 'top');
+        this._showArrow(this.game.world.centerX, this.game.world.centerY + 100, 'up');
         this._mousePixels = 0;
         this._stepCheck = () => {
-          if (this._mousePixels > 60) {
+            if (this._mousePixels > 60) {
             this._stepCheck = null;
             this._advanceStep();
-          }
+            }
         };
         break;
-
-      // ── Step 1: Shoot ────────────────────────────────────────────────
-      case 1:
+        
+        // ── Step 1: Shoot ────────────────────────────────────────────────
+        case 1:
         this._showHint('Press SPACEBAR to shoot toward the centre', 'top');
+        this._showArrow(this.game.world.centerX, this.game.world.centerY - 150, 'down');
         this.spaceKey.onDown.addOnce(() => {
-          this.player.handleActionKey();
-          this._advanceStep();
+            this.player.handleActionKey();
+            this._advanceStep();
         }, this);
         break;
-
-      // ── Step 2: Listen to notes ──────────────────────────────────────
-      case 2:
+        
+        // ── Step 2: Listen to notes ──────────────────────────────────────
+        case 2:
         this._showHint('Each wall plays a note — listen!', 'bottom');
+        this._showArrow(this.game.world.centerX, this.game.world.centerY - 100, 'down');
         // Will be advanced by setBallsOut(false) when ball is caught
         this._waitingForCatch = true;
         break;
-
-      // ── Step 3: Caught – keep going ──────────────────────────────────
-      case 3:
+        
+        // ── Step 3: Caught – keep going ──────────────────────────────────
+        case 3:
         this._showHint('You reloaded! Keep shooting to hit every wall.', 'top');
         this._waitingForCatch = false;
         this._freePlay = true;
         this.spaceKey.onDown.addOnce(() => {
-          this._clearHint();
-          this.player.handleActionKey();
-          this._showHint('Hit all 8 walls to complete an octave!', 'bottom');
+            this._clearHint();
+            this._clearArrow();
+            this.player.handleActionKey();
+            this._showHint('Hit all 8 walls to complete an octave!', 'bottom');
         }, this);
         break;
-
-      // ── Step 4: Octave complete ──────────────────────────────────────
-      case 4:
+        
+        // ── Step 4: Octave complete ──────────────────────────────────────
+        case 4:
         this._clearHint();
+        this._clearArrow();
         this._showHint('You completed an octave! Starting the real game…', 'center');
         this.game.time.events.add(2500, () => {
-          this._cleanup();
-          this.data.tutorialDone = true;
-          this.game.state.start('Main', true, false, this.data);
-          this.game.state.start('Story', true, false, this.data);
+            this._cleanup();
+            this.data.tutorialDone = true;
+            this.game.state.start('Main', true, false, this.data);
+            this.game.state.start('Story', true, false, this.data);
         }, this);
         break;
 
@@ -278,8 +290,130 @@ class Tutorial extends Phaser.State {
     this._hintGroup.removeAll(true);
   }
 
+  _clearArrow() {
+    this._arrowGroup.removeAll(true);
+  }
+
+  _showArrow(x, y, direction) {
+    this._clearArrow();
+    
+    const arrow = this.game.add.graphics(x, y);
+    const size = 30;
+    const color = 0xffffff;
+    
+    arrow.lineStyle(4, color, 1);
+    arrow.beginFill(color, 0.8);
+    
+    if (direction === 'up') {
+      arrow.moveTo(0, size);
+      arrow.lineTo(-size/2, 0);
+      arrow.lineTo(size/2, 0);
+      arrow.lineTo(0, size);
+    } else if (direction === 'down') {
+      arrow.moveTo(0, -size);
+      arrow.lineTo(-size/2, 0);
+      arrow.lineTo(size/2, 0);
+      arrow.lineTo(0, -size);
+    } else if (direction === 'left') {
+      arrow.moveTo(size, 0);
+      arrow.lineTo(0, -size/2);
+      arrow.lineTo(0, size/2);
+      arrow.lineTo(size, 0);
+    } else if (direction === 'right') {
+      arrow.moveTo(-size, 0);
+      arrow.lineTo(0, -size/2);
+      arrow.lineTo(0, size/2);
+      arrow.lineTo(-size, 0);
+    }
+    
+    arrow.endFill();
+    this._arrowGroup.add(arrow);
+    
+    // Animate arrow
+    const tween = this.game.add.tween(arrow.scale).to({ x: 1.2, y: 1.2 }, 500, Phaser.Easing.Sinusoidal.InOut, true, 0, -1, true);
+    this._arrowGroup.bringToTop(arrow);
+  }
+
+  _createProgressIndicator() {
+    const totalSteps = 4;
+    const dotSize = 12;
+    const spacing = 20;
+    const startX = this.game.world.centerX - ((totalSteps - 1) * spacing) / 2;
+    const y = this.game.height - 30;
+    
+    this._progressDots = [];
+    
+    for (let i = 0; i < totalSteps; i++) {
+      const dot = this.game.add.graphics(startX + i * spacing, y);
+      dot.beginFill(0xffffff, 0.3);
+      dot.drawCircle(0, 0, dotSize);
+      dot.endFill();
+      this._progressDots.push(dot);
+      this._hintGroup.add(dot);
+    }
+    
+    this._updateProgressIndicator();
+  }
+
+  _updateProgressIndicator() {
+    if (!this._progressDots) return;
+    
+    for (let i = 0; i < this._progressDots.length; i++) {
+      const dot = this._progressDots[i];
+      dot.clear();
+      
+      if (i < this._step) {
+        // Completed step
+        dot.beginFill(0x00ff00, 0.8);
+      } else if (i === this._step) {
+        // Current step
+        dot.beginFill(0xffffff, 1);
+      } else {
+        // Future step
+        dot.beginFill(0xffffff, 0.3);
+      }
+      
+      dot.drawCircle(0, 0, 12);
+      dot.endFill();
+    }
+  }
+
+  _createSkipButton() {
+    const buttonX = this.game.width - 80;
+    const buttonY = 30;
+    
+    const button = this.game.add.text(buttonX, buttonY, 'SKIP', {
+      font: "16px 'springsteel'",
+      fill: '#ffffff',
+      align: 'center'
+    });
+    button.anchor.setTo(0.5);
+    
+    const bg = this.game.add.graphics(buttonX, buttonY);
+    bg.beginFill(0x000000, 0.5);
+    bg.drawRoundedRect(-30, -15, 60, 30, 8);
+    bg.endFill();
+    
+    button.inputEnabled = true;
+    button.input.useHandCursor = true;
+    button.events.onInputDown.add(() => {
+      this._cleanup();
+      this.data.tutorialDone = true;
+      this.game.state.start('Main', true, false, this.data);
+    }, this);
+    
+    this._skipButton = { button, bg };
+    this._hintGroup.add(bg);
+    this._hintGroup.add(button);
+  }
+
   _cleanup() {
     this._clearHint();
+    this._clearArrow();
+    if (this._skipButton) {
+      this._skipButton.button.destroy();
+      this._skipButton.bg.destroy();
+    }
     if (this.octagon) this.octagon.destroy();
     for (const ball of this.balls) { ball.destroy(true); }
     this.balls = [];

@@ -83,16 +83,18 @@ class Preload extends Phaser.State {
       };
 
       // Wrap loaders in safety timeouts to prevent silent hangs
-      // Make audio optional - if it fails, continue without audio
       const promises = [
         withTimeout(data.instruments[0].load(), "Instruments").catch(e => {
-          console.warn('Instrument loading failed, continuing without audio:', e);
+          console.error('Instrument loading error:', e);
+          return null;
         }),
         withTimeout(musicManager.load(), "MusicManager").catch(e => {
-          console.warn('Music loading failed, continuing without audio:', e);
+          console.error('Music loading error:', e);
+          return null;
         }),
         withTimeout(soundManager.load(), "SoundManager").catch(e => {
-          console.warn('Sound loading failed, continuing without audio:', e);
+          console.error('Sound loading error:', e);
+          return null;
         }),
         fontPromise
       ];

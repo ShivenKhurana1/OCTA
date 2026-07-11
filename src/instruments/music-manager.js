@@ -36,20 +36,32 @@ class MusicManager {
   }
 
   startLevel(level) {
-    if (level > 1) {
-      this.gains.bg = new Tone.Gain(1);
-      Tone.connectSeries(this.tracks[level].bg, this.gains.bg, Tone.Master);
-      Tone.connectSeries(this.tracks[level].trans, Tone.Master);
-      this.tracks[level].bg.start();
-      this.tracks[level].trans.start();
-    }
-    if (level < 9) {
-      this.gains.evol = new Tone.Gain(0);
-      Tone.connectSeries(this.tracks[level].evol, this.gains.evol, Tone.Master);
-      this.tracks[level].evol.start();
-    }
+    try {
+      if (level > 1) {
+        if (!this.tracks[level] || !this.tracks[level].bg || !this.tracks[level].trans) {
+          console.warn('Music tracks not loaded for level:', level);
+          return;
+        }
+        this.gains.bg = new Tone.Gain(1);
+        Tone.connectSeries(this.tracks[level].bg, this.gains.bg, Tone.Master);
+        Tone.connectSeries(this.tracks[level].trans, Tone.Master);
+        this.tracks[level].bg.start();
+        this.tracks[level].trans.start();
+      }
+      if (level < 9) {
+        if (!this.tracks[level] || !this.tracks[level].evol) {
+          console.warn('Evol track not loaded for level:', level);
+          return;
+        }
+        this.gains.evol = new Tone.Gain(0);
+        Tone.connectSeries(this.tracks[level].evol, this.gains.evol, Tone.Master);
+        this.tracks[level].evol.start();
+      }
 
-    this.levelStarted = level;
+      this.levelStarted = level;
+    } catch (e) {
+      console.error('Error starting music level:', e);
+    }
   }
 
   stopLevel(level) {

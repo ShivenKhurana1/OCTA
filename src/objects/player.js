@@ -111,12 +111,17 @@ class Player {
   }
 
   handleActionKey() {
-    if (!this.active) return;
+    if (!this.active) {
+      console.warn('Player not active, cannot shoot');
+      return;
+    }
 
     if (this.ammo.length > 0) {
       // Shoot towards the center of the screen
       const shootDirection = new Phaser.Point(this.game.world.centerX - this.sprite.x, this.game.world.centerY - this.sprite.y).normalize();
       this.shoot(shootDirection);
+    } else {
+      console.warn('No ammo to shoot');
     }
   }
 

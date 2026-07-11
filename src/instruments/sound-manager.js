@@ -17,6 +17,10 @@ class SoundManager{
 
   play(sound) {
     try {
+      if (!this.sounds || !this.sounds[sound]) {
+        console.warn('Sound not loaded:', sound);
+        return;
+      }
       this.sounds[sound].start();
     } catch (error) {
       console.error('Error playing sound:', error);
