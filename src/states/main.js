@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import Tone from 'tone';
 import Player from '../objects/player';
 import Octagon from '../objects/octagon';
 import CollisionManager from '../objects/collision-manager';
@@ -71,6 +72,11 @@ class Main extends Phaser.State {
   }
 
   handleSpacePress() {
+    // Initialize audio context on first user interaction
+    if (Tone && Tone.context && Tone.context.state !== 'running') {
+      Tone.context.resume().catch(e => console.warn('Audio context resume failed:', e));
+    }
+    
     if (!this.started) {
       this.startGame();
     } else {

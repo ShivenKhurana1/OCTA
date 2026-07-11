@@ -6,10 +6,6 @@ class Instrument {
     this.instruments = {};
     promises.push(
       new Promise(resolve => {
-        const pianoReverb = new Tone.Reverb({
-          decay: 6,
-          wet: 0.4
-        }).toDestination();
         this.instruments.piano = new Tone.Sampler(
           {
             A3: 'A3v7.wav',
@@ -25,17 +21,12 @@ class Instrument {
             onload: resolve,
             volume: 1
           }
-        ).connect(pianoReverb);
-        pianoReverb.generate();
+        ).toMaster();
       })
     );
 
     promises.push(
       new Promise(resolve => {
-        const xylophoneReverb = new Tone.Reverb({
-          decay: 2,
-          wet: 0.2
-        }).toDestination();
         this.instruments.xylophone = new Tone.Sampler(
           {
             G3: 'B15.wav',
@@ -50,23 +41,12 @@ class Instrument {
             onload: resolve,
             volume: -10
           }
-        ).connect(
-          new Tone.FeedbackDelay({
-            delayTime: 0.1,
-            feedback: 0.3,
-            wet: 0.5
-          }).connect(xylophoneReverb)
-        );
-        xylophoneReverb.generate();
+        ).toMaster();
       })
     );
 
     promises.push(
       new Promise(resolve => {
-        const guitarReverb = new Tone.Reverb({
-          decay: 7,
-          wet: 0.6
-        }).toDestination();
         this.instruments.guitar = new Tone.Sampler(
           {
             A3: 'A2.wav',
@@ -90,8 +70,7 @@ class Instrument {
             onload: resolve,
             volume: -5
           }
-        ).connect(guitarReverb);
-        guitarReverb.generate();
+        ).toMaster();
       })
     );
 

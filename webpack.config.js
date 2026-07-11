@@ -1,6 +1,7 @@
 const path              = require('path');
 const webpack           = require('webpack');
 const htmlPlugin        = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 // Phaser webpack config
 const phaserModule = path.join(__dirname, '/node_modules/phaser-ce/');
@@ -63,6 +64,16 @@ module.exports = {
           }
         }]
       },
+      {
+        test: /\.(ogg|wav)(\?.*)?$/,
+        use: [{
+          loader:'url-loader',
+          options: {
+            name: '[path][name].[ext]',
+            limit: 10000
+          }
+        }]
+      },
       { test: /pixi\.js/, use: ['expose-loader?PIXI'] },
       { test: /phaser-split\.js$/, use: ['expose-loader?Phaser'] },
       { test: /p2\.js/, use: ['expose-loader?p2'] },
@@ -74,6 +85,10 @@ module.exports = {
       template:path.join(PATHS.app,'index.html'),
       inject:'body'
     }),
+    new CopyWebpackPlugin([
+      { from: 'resources', to: 'resources' },
+      { from: 'assets', to: 'assets' }
+    ]),
   ],
   resolve: {
     alias: {

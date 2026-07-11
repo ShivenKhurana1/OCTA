@@ -6,7 +6,7 @@ class SoundManager{
     this.sounds = {};
 
     for (let sound of ['start', 'shoot', 'hit']) {
-      this.sounds[sound] = new Tone.Player().toDestination();
+      this.sounds[sound] = new Tone.Player().toMaster();
       this.requests.push(this.sounds[sound].load(`./assets/sounds/${sound}.ogg`));
     }
   }
