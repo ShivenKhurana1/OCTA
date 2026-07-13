@@ -3,10 +3,11 @@ import teoria from 'teoria';
 import CONSTANTS from '../utils/constants';
 
 class Octagon {
-  constructor(state, instruments, sides = 8) {
+  constructor(state, instruments, sides = 8, levelConfig = null) {
     this.game = state.game;
     this.state = state;
     this.sides = sides;
+    this.levelConfig = levelConfig;
 
     this.baseRadius = CONSTANTS.OCTAGON_SIZE / 2;
     this.currentRotationDirection = 1;
@@ -18,7 +19,7 @@ class Octagon {
     this.laserWarning = false;
     this.laserStartIndex = 0;
     this.laserEndIndex = 0;
-    this.laserFlickerState = true; // Flashes laser beam on/off slowly
+    this.laserFlickerState = true;
 
     // Laser drawing overlay
     this.laserGraphics = this.game.add.graphics(0, 0);
@@ -82,8 +83,8 @@ class Octagon {
 
     const currentLevel = this.state.level;
 
-    // ── 1. Reversing Rotation Direction (Active on Level 2+) ──
-    if (currentLevel >= 2) {
+    // ── 1. Reversing Rotation Direction (from level config) ──
+    if (this.levelConfig && this.levelConfig.octagon.rotationReversal) {
       if (this.game.time.fps && Math.floor(this.timeCounter) % 8 === 0 && Math.floor(this.timeCounter) > 0) {
         if (!this._reversedThisInterval) {
           this.currentRotationDirection *= -1;
@@ -99,17 +100,17 @@ class Octagon {
       wall.rotate(rotationSpeed);
     }
 
-    // ── 2. Pulsing Boundaries (Only active on Levels 3, 5, 7) ──
+    // ── 2. Pulsing Boundaries (from level config) ──
     let pulseFactor = 1;
-    if (currentLevel === 3 || currentLevel === 5 || currentLevel === 7) {
+    if (this.levelConfig && this.levelConfig.octagon.pulsingBoundaries) {
       pulseFactor = 1 + 0.15 * Math.sin(this.timeCounter * 2);
     }
     const scaledRadius = this.baseRadius * pulseFactor;
 
-    // ── 3. Asymmetrical Warping (Only active on Levels 4, 6, 8) ──
+    // ── 3. Asymmetrical Warping (from level config) ──
     let stretchX = 1;
     let stretchY = 1;
-    if (currentLevel === 4 || currentLevel === 6 || currentLevel === 8) {
+    if (this.levelConfig && this.levelConfig.octagon.asymmetricalWarping) {
       stretchX = 1 + 0.1 * Math.sin(this.timeCounter * 1.5);
       stretchY = 1 + 0.1 * Math.cos(this.timeCounter * 1.5);
     }
@@ -119,10 +120,11 @@ class Octagon {
       wall.updatePosition(scaledRadius, stretchX, stretchY);
     }
 
-    // ── 4. Laser Gate Flickering (Only on Level 4+) ──
-    if (currentLevel >= 4) {
-      // Loop cycle: 0-120frames (Warning phase), 120-150frames (Laser active/firing phase - 0.5s), 150-400frames (Off cooldown)
-      const cycle = this.laserTimer % 400;
+    // ── 4. Laser Gate Flickering (from level config) ──
+    if (this.levelConfig && this.levelConfig.lasers.enabled) {
+      const laserConfig = this.levelConfig.lasers;
+      const totalCycle = laserConfig.warningFrames + laserConfig.activeFrames + laserConfig.cooldownFrames;
+      const cycle = this.laserTimer % totalCycle;
       
       if (cycle === 0) {
         // Pick random start wall index
@@ -149,11 +151,11 @@ class Octagon {
 
         this.laserWarning = true;
         this.laserActive = false;
-      } else if (cycle === 120) {
+      } else if (cycle === laserConfig.warningFrames) {
         this.laserWarning = false;
         this.laserActive = true;
         this.state.soundManager.play('shoot'); 
-      } else if (cycle === 150) {
+      } else if (cycle === laserConfig.warningFrames + laserConfig.activeFrames) {
         this.laserActive = false;
         this.laserWarning = false;
       }
@@ -201,6 +203,7 @@ class Octagon {
   // Segment-point collision test helper
   checkLaserCollision() {
     if (this.state.balls.length === 0) return;
+    if (!this.walls[this.laserStartIndex] || !this.walls[this.laserEndIndex]) return;
     
     const wallA = this.walls[this.laserStartIndex].sprite;
     const wallB = this.walls[this.laserEndIndex].sprite;

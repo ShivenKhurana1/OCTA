@@ -53,6 +53,34 @@ class UI {
     this.levelText.anchor.x = 0;
     this.levelText.anchor.y = 0;
     this.levelText.alpha = CONSTANTS.UI_OPACITY;
+
+    this.bossHealthGroup = this.game.add.group();
+this.bossHealthGroup.visible = false;
+    
+this.bossHealthBg = this.game.add.graphics(0, 0);
+this.bossHealthBg.beginFill(0x333333, 0.8);
+this.bossHealthBg.drawRect(0, 0, 400, 30);
+this.bossHealthBg.endFill();
+this.bossHealthGroup.add(this.bossHealthBg);
+    
+this.bossHealthBar = this.game.add.graphics(0, 0);
+this.bossHealthBar.beginFill(0xff0000, 1);
+this.bossHealthBar.drawRect(2, 2, 396, 26);
+this.bossHealthBar.endFill();
+this.bossHealthGroup.add(this.bossHealthBar);
+    
+this.bossHealthGroup.x = this.game.world.centerX - 200;
+this.bossHealthGroup.y = 60;
+    
+this.bossLabel = this.game.add.text(this.game.world.centerX, 45, 'THE CONDUCTOR', {
+  align: 'center',
+  fill: '#ff4444',
+  font: "20px 'springsteel'"
+});
+this.bossLabel.anchor.x = 0.5;
+this.bossLabel.anchor.y = 0.5;
+this.bossLabel.visible = false;
+this.bossHealthGroup.add(this.bossLabel);
   }
 
   hideTitle() {
@@ -67,7 +95,23 @@ class UI {
   hideControls() {
     this.controls.visible = false;
   }
+  showBossHealth() {
+    this.bossHealthGroup.visible = true;
+    this.bossLabel.visible = true;
+  }
 
+  hideBossHealth() {
+    this.bossHealthGroup.visible = false;
+    this.bossLabel.visible = false;
+  }
+
+  updateBossHealth(current, max) {
+    const percentage = current / max;
+    this.bossHealthBar.clear();
+    this.bossHealthBar.beginFill(0xff0000, 1);
+    this.bossHealthBar.drawRect(2, 2, 396 * percentage, 26);
+    this.bossHealthBar.endFill();
+  }
   showTitle() {
     this.title.visible = true;
     this.score.visible = true;

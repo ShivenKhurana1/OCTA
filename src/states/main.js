@@ -6,7 +6,9 @@ import CollisionManager from '../objects/collision-manager';
 import ProgressDisplay from '../objects/progress-display';
 import UI from '../objects/ui';
 import Obstacle from '../objects/obstacle';
+import Boss from '../objects/boss';
 import CONSTANTS from '../utils/constants';
+import levelLoader from '../utils/level-loader';
 
 class Main extends Phaser.State {
 
@@ -26,7 +28,8 @@ class Main extends Phaser.State {
     this.soundManager = this.data.soundManager;
     
     this.progress = new ProgressDisplay(this.game, this.background);
-    this.octagon = new Octagon(this, this.data.instruments, 5);
+    this.levelConfig = levelLoader.getLevelConfig(1);
+    this.octagon = new Octagon(this, this.data.instruments, this.levelConfig.octagon.sides, this.levelConfig);
     this.player = new Player(this);
     
     // Title screen
@@ -38,6 +41,7 @@ class Main extends Phaser.State {
     this.ballsOut = false;
     this.balls = [];
     this.obstacles = [];
+    this.boss = null;
 
     // Update level display
     this.ui.updateLevel(this.level);
@@ -120,14 +124,27 @@ class Main extends Phaser.State {
     this.soundManager.play('start');
 
     // Update game status
-    this.level = 1;
+    this.level = 9;
     this.nextLevelCounter = 8;
     this.ballsOut = false;
     this.balls = [];
     if (this.octagon) {
       this.octagon.destroy();
     }
-    this.octagon = new Octagon(this, this.data.instruments, 5);
+    if (this.boss) {
+      this.boss.destroy();
+      this.boss = null;
+      this.ui.hideBossHealth();
+    }
+    this.levelConfig = levelLoader.getLevelConfig(this.level);
+    this.octagon = new Octagon(this, this.data.instruments, this.levelConfig.octagon.sides, this.levelConfig);
+    
+    // Initialize boss on level 9
+    if (this.levelConfig.isBossLevel) {
+      this.boss = new Boss(this, this.data.instruments);
+      this.ui.showBossHealth();
+    }
+    
     this.spawnObstacles();
     this.timer.start();
     this.hits = 0;
@@ -148,6 +165,9 @@ class Main extends Phaser.State {
       for (const obs of this.obstacles) {
         obs.update();
       }
+    }
+    if (this.boss) {
+      this.boss.update();
     }
   }
 
@@ -179,6 +199,23 @@ class Main extends Phaser.State {
       this.progress.increment(this.level * 8 - this.nextLevelCounter, this.level * 8);
       this.musicManager.progress((this.level * 8 - this.nextLevelCounter) / (this.level * 8));
 
+      // Boss damage on level 9
+      if (this.level === 9 && this.boss) {
+        const bossDefeated = this.boss.takeDamage(10);
+        this.ui.updateBossHealth(this.boss.health, this.boss.maxHealth);
+        
+        if (bossDefeated) {
+          this.boss.destroy();
+          this.boss = null;
+          this.ui.hideBossHealth();
+          this.ui.updateScore(this.timer.ms, this.hits);
+          this.ui.showTitle();
+          this.timer.stop();
+          this.started = false;
+          return;
+        }
+      }
+
       if (this.nextLevelCounter <= 0) {
         this.musicManager.stopLevel(this.level);
         this.level++;
@@ -188,14 +225,27 @@ class Main extends Phaser.State {
         this.progress.complete();
         this.musicManager.startLevel(this.level);
         
-        if (this.level < 9) {
+        if (this.level < 10) {
           const typeBall = this.level <= 3 ? 'default' : this.level <= 6 ? 'fast' : 'curved';
           this.player.giveBall(typeBall, true);
           this.nextLevelCounter = this.level * 8;
           if (this.octagon) {
             this.octagon.destroy();
           }
-          this.octagon = new Octagon(this, this.data.instruments, this.level + 4);
+          if (this.boss) {
+            this.boss.destroy();
+            this.boss = null;
+            this.ui.hideBossHealth();
+          }
+          this.levelConfig = levelLoader.getLevelConfig(this.level);
+          this.octagon = new Octagon(this, this.data.instruments, this.levelConfig.octagon.sides, this.levelConfig);
+          
+          // Initialize boss on level 9
+          if (this.levelConfig.isBossLevel) {
+            this.boss = new Boss(this, this.data.instruments);
+            this.ui.showBossHealth();
+          }
+          
           this.spawnObstacles();
         } else {
           this.player.desactivate();
@@ -258,24 +308,17 @@ class Main extends Phaser.State {
     }
     this.obstacles = [];
 
-    // Spawn obstacles starting at Level 4
-    if (this.level >= 4) {
-      if (this.level === 4) {
-        // One rotating bar in the center
-        this.obstacles.push(new Obstacle(this, this.game.world.centerX, this.game.world.centerY, 120, 15, 0.7));
-      } else if (this.level === 5) {
-        // Two rotating bars offset from center
-        this.obstacles.push(new Obstacle(this, this.game.world.centerX - 100, this.game.world.centerY, 80, 15, 1.2));
-        this.obstacles.push(new Obstacle(this, this.game.world.centerX + 100, this.game.world.centerY, 80, 15, -1.2));
-      } else if (this.level === 6) {
-        // Triangle obstacle setup
-        this.obstacles.push(new Obstacle(this, this.game.world.centerX, this.game.world.centerY - 80, 80, 15, 1));
-        this.obstacles.push(new Obstacle(this, this.game.world.centerX - 70, this.game.world.centerY + 50, 80, 15, 1));
-        this.obstacles.push(new Obstacle(this, this.game.world.centerX + 70, this.game.world.centerY + 50, 80, 15, 1));
-      } else if (this.level >= 7) {
-        // Four fast rotating bars forming a cross-like hazard
-        this.obstacles.push(new Obstacle(this, this.game.world.centerX, this.game.world.centerY, 140, 15, 1.5));
-        this.obstacles.push(new Obstacle(this, this.game.world.centerX, this.game.world.centerY, 15, 140, 1.5));
+    // Spawn obstacles from level config
+    if (this.levelConfig.obstacles) {
+      for (const obsConfig of this.levelConfig.obstacles) {
+        this.obstacles.push(new Obstacle(
+          this, 
+          this.game.world.centerX + obsConfig.x, 
+          this.game.world.centerY + obsConfig.y, 
+          obsConfig.width, 
+          obsConfig.height, 
+          obsConfig.rotationSpeed
+        ));
       }
     }
   }

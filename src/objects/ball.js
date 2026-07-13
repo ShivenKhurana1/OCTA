@@ -102,7 +102,9 @@ class Ball {
     if (!reset) {
       this.state.removeBall(this);
     }
-    this.emitter.on = false;
+    if (this.emitter) {
+      this.emitter.on = false;
+    }
     if (this.sprite) {
       this.sprite.destroy();
     }
