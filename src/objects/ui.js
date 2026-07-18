@@ -55,32 +55,60 @@ class UI {
     this.levelText.alpha = CONSTANTS.UI_OPACITY;
 
     this.bossHealthGroup = this.game.add.group();
-this.bossHealthGroup.visible = false;
-    
-this.bossHealthBg = this.game.add.graphics(0, 0);
-this.bossHealthBg.beginFill(0x333333, 0.8);
-this.bossHealthBg.drawRect(0, 0, 400, 30);
-this.bossHealthBg.endFill();
-this.bossHealthGroup.add(this.bossHealthBg);
-    
-this.bossHealthBar = this.game.add.graphics(0, 0);
-this.bossHealthBar.beginFill(0xff0000, 1);
-this.bossHealthBar.drawRect(2, 2, 396, 26);
-this.bossHealthBar.endFill();
-this.bossHealthGroup.add(this.bossHealthBar);
-    
-this.bossHealthGroup.x = this.game.world.centerX - 200;
-this.bossHealthGroup.y = 60;
-    
-this.bossLabel = this.game.add.text(this.game.world.centerX, 45, 'THE CONDUCTOR', {
-  align: 'center',
-  fill: '#ff4444',
-  font: "20px 'springsteel'"
-});
-this.bossLabel.anchor.x = 0.5;
-this.bossLabel.anchor.y = 0.5;
-this.bossLabel.visible = false;
-this.bossHealthGroup.add(this.bossLabel);
+    this.bossHealthGroup.visible = false;
+        
+    this.bossHealthBg = this.game.add.graphics(0, 0);
+    this.bossHealthBg.beginFill(0x333333, 0.8);
+    this.bossHealthBg.drawRect(0, 0, 400, 30);
+    this.bossHealthBg.endFill();
+    this.bossHealthGroup.add(this.bossHealthBg);
+        
+    this.bossHealthBar = this.game.add.graphics(0, 0);
+    this.bossHealthBar.beginFill(0xff0000, 1);
+    this.bossHealthBar.drawRect(2, 2, 396, 26);
+    this.bossHealthBar.endFill();
+    this.bossHealthGroup.add(this.bossHealthBar);
+        
+    this.bossHealthGroup.x = this.game.world.centerX - 200;
+    this.bossHealthGroup.y = 60;
+        
+    this.bossLabel = this.game.add.text(this.game.world.centerX, 45, 'THE CONDUCTOR', {
+      align: 'center',
+      fill: '#ff4444',
+      font: "20px 'springsteel'"
+    });
+    this.bossLabel.anchor.x = 0.5;
+    this.bossLabel.anchor.y = 0.5;
+    this.bossLabel.visible = false;
+    this.bossHealthGroup.add(this.bossLabel);
+    // Player health bar (for boss battles)
+    this.playerHealthGroup = this.game.add.group();
+    this.playerHealthGroup.visible = false;
+
+    this.playerHealthBg = this.game.add.graphics(0, 0);
+    this.playerHealthBg.beginFill(0x333333, 0.8);
+    this.playerHealthBg.drawRect(0, 0, 400, 30);
+    this.playerHealthBg.endFill();
+    this.playerHealthGroup.add(this.playerHealthBg);
+
+    this.playerHealthBar = this.game.add.graphics(0, 0);
+    this.playerHealthBar.beginFill(0x00ff00, 1);
+    this.playerHealthBar.drawRect(2, 2, 396, 26);
+    this.playerHealthBar.endFill();
+    this.playerHealthGroup.add(this.playerHealthBar);
+
+    this.playerHealthGroup.x = this.game.world.centerX - 200;
+    this.playerHealthGroup.y = 100;
+
+    this.playerLabel = this.game.add.text(this.game.world.centerX, 85, 'PLAYER', {
+      align: 'center',
+      fill: '#00ff00',
+      font: "20px 'springsteel'"
+    });
+    this.playerLabel.anchor.x = 0.5;
+    this.playerLabel.anchor.y = 0.5;
+    this.playerLabel.visible = false;
+    this.playerHealthGroup.add(this.playerLabel);
   }
 
   hideTitle() {
@@ -111,6 +139,25 @@ this.bossHealthGroup.add(this.bossLabel);
     this.bossHealthBar.beginFill(0xff0000, 1);
     this.bossHealthBar.drawRect(2, 2, 396 * percentage, 26);
     this.bossHealthBar.endFill();
+  }
+  showPlayerHealth() {
+    this.playerHealthGroup.visible = true;
+    this.playerLabel.visible = true;
+  }
+
+  hidePlayerHealth() {
+    this.playerHealthGroup.visible = false;
+    this.playerLabel.visible = false;
+  }
+
+  updatePlayerHealth(current, max) {
+    const percentage = current / max;
+    this.playerHealthBar.clear();
+    // Change color based on health
+    const color = percentage > 0.5 ? 0x00ff00 : percentage > 0.25 ? 0xffff00 : 0xff0000;
+    this.playerHealthBar.beginFill(color, 1);
+    this.playerHealthBar.drawRect(2, 2, 396 * percentage, 26);
+    this.playerHealthBar.endFill();
   }
   showTitle() {
     this.title.visible = true;

@@ -135,15 +135,19 @@ class Main extends Phaser.State {
       this.boss.destroy();
       this.boss = null;
       this.ui.hideBossHealth();
+      this.ui.hidePlayerHealth();
     }
     this.levelConfig = levelLoader.getLevelConfig(this.level);
     this.octagon = new Octagon(this, this.data.instruments, this.levelConfig.octagon.sides, this.levelConfig);
     
-    // Initialize boss on level 9
-    if (this.levelConfig.isBossLevel) {
-      this.boss = new Boss(this, this.data.instruments);
-      this.ui.showBossHealth();
-    }
+  // Initialize boss on level 9
+  if (this.levelConfig.isBossLevel) {
+    this.boss = new Boss(this, this.data.instruments);
+    this.ui.showBossHealth();
+    this.ui.showPlayerHealth();
+    this.player.restoreHealth();
+    this.ui.updatePlayerHealth(this.player.health, this.player.maxHealth);
+  }
     
     this.spawnObstacles();
     this.timer.start();
@@ -236,6 +240,7 @@ class Main extends Phaser.State {
             this.boss.destroy();
             this.boss = null;
             this.ui.hideBossHealth();
+            this.ui.hidePlayerHealth();
           }
           this.levelConfig = levelLoader.getLevelConfig(this.level);
           this.octagon = new Octagon(this, this.data.instruments, this.levelConfig.octagon.sides, this.levelConfig);
@@ -321,6 +326,19 @@ class Main extends Phaser.State {
         ));
       }
     }
+  }
+  handlePlayerDeath() {
+    this.player.desactivate();
+    if (this.boss) {
+      this.boss.destroy();
+      this.boss = null;
+    }
+    this.ui.hideBossHealth();
+    this.ui.hidePlayerHealth();
+    this.ui.updateScore(this.timer.ms, this.hits);
+    this.ui.showTitle();
+    this.timer.stop();
+    this.started = false;
   }
 }
 

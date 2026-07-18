@@ -49,17 +49,28 @@ class Boss {
     this.drawBoss();
   }
 
-  drawBoss() {
+    drawBoss() {
     this.core.clear();
     this.ring.clear();
 
+    let coreColor = 0xff0000; // Phase 1: Red
+    let ringColor = 0xff4444;
+
+    if (this.phase === 2) {
+      coreColor = 0xffaa00; // Phase 2: Orange
+      ringColor = 0xffcc44;
+    } else if (this.phase === 3) {
+      coreColor = 0xaa00ff; // Phase 3: Purple
+      ringColor = 0xcc44ff;
+    }
+
     // Draw core
-    this.core.beginFill(0xff0000, 1);
+    this.core.beginFill(coreColor, 1);
     this.core.drawCircle(0, 0, this.coreRadius);
     this.core.endFill();
 
     // Draw ring
-    this.ring.lineStyle(4, 0xff4444, 1);
+    this.ring.lineStyle(4, ringColor, 1);
     this.ring.drawCircle(0, 0, this.ringRadius);
   }
 
@@ -71,15 +82,21 @@ class Boss {
     this.attackTimer++;
 
     // Determine phase based on health
+    let newPhase = 1;
     if (this.health > 66) {
-      this.phase = 1;
+      newPhase = 1;
       this.attackCooldown = 80;
     } else if (this.health > 33) {
-      this.phase = 2;
+      newPhase = 2;
       this.attackCooldown = 60;
     } else {
-      this.phase = 3;
+      newPhase = 3;
       this.attackCooldown = 40;
+    }
+
+    if (newPhase !== this.phase) {
+      this.phase = newPhase;
+      this.drawBoss(); // Redraw with new color
     }
 
     // Execute attacks
@@ -87,14 +104,24 @@ class Boss {
       this.attackTimer = 0;
       this.executeAttack();
     }
+
     // Movement logic
     this.moveTimer++;
     if (this.moveTimer >= this.moveCooldown) {
       this.moveTimer = 0;
-      // Pick new random target within bounds
-      const margin = 150;
-      this.targetX = margin + Math.random() * (this.game.width - margin * 2);
-      this.targetY = margin + Math.random() * (this.game.height - margin * 2);
+      
+      // In phase 3, occasionally dash toward the player
+      if (this.phase === 3 && Math.random() < 0.5) {
+        this.targetX = this.state.player.sprite.x;
+        this.targetY = this.state.player.sprite.y;
+        this.moveSpeed = 6; // Dash speed
+      } else {
+        // Pick new random target within bounds
+        const margin = 150;
+        this.targetX = margin + Math.random() * (this.game.width - margin * 2);
+        this.targetY = margin + Math.random() * (this.game.height - margin * 2);
+        this.moveSpeed = 2 + this.phase; // Normal speed scales with phase
+      }
     }
 
     // Move toward target
@@ -130,6 +157,18 @@ class Boss {
     const laserCount = this.phase + 2;
     for (let i = 0; i < laserCount; i++) {
       this.game.time.events.add(i * 150, () => {
+        const playerX = this.state.player.sprite.x;
+        const playerY = this.state.player.sprite.y;
+        const baseAngle = Math.atan2(playerY - this.group.y, playerX - this.group.x);
+        
+        this.createProjectile(baseAngle);
+        
+        // Fire spread if phase 2 or 3
+        if (this.phase >= 2) {
+          this.createProjectile(baseAngle - 0.3); // Left spread
+          this.createProjectile(baseAngle + 0.3); // Right spread
+        }
+        
         this.state.soundManager.play('shoot');
       });
     }
@@ -141,6 +180,28 @@ class Boss {
       .to({ x: 1.5, y: 1.5 }, 200, Phaser.Easing.Elastic.Out)
       .to({ x: 1, y: 1 }, 300, Phaser.Easing.Elastic.Out)
       .start();
+
+    // Check collision during the expansion
+    this.game.time.events.add(100, () => {
+      const pDx = this.group.x - this.state.player.sprite.x;
+      const pDy = this.group.y - this.state.player.sprite.y;
+      const pDist = Math.sqrt(pDx * pDx + pDy * pDy);
+      
+      // Ring radius expands to 150 (100 * 1.5)
+      if (pDist < 160) {
+        // Damage
+        this.state.player.health = Math.max(0, this.state.player.health - 25);
+        this.state.ui.updatePlayerHealth(this.state.player.health, this.state.player.maxHealth);
+        if (this.state.player.health <= 0) {
+          this.state.handlePlayerDeath();
+        }
+        
+        // Knockback velocity
+        const angle = Math.atan2(-pDy, -pDx);
+        this.state.player.sprite.body.velocity.x += Math.cos(angle) * 800;
+        this.state.player.sprite.body.velocity.y += Math.sin(angle) * 800;
+      }
+    });
   }
 
   pulseWave() {
@@ -161,6 +222,7 @@ class Boss {
     shockwave.y = this.game.world.centerY;
     shockwave.radius = 50;
     shockwave.alpha = 1;
+    shockwave.hasHitPlayer = false;
 
     const tween = this.game.add.tween(shockwave);
     tween.to({ radius: 400, alpha: 0 }, 1000, Phaser.Easing.Linear.None);
@@ -168,6 +230,21 @@ class Boss {
       shockwave.clear();
       shockwave.lineStyle(3, 0xff0000, shockwave.alpha);
       shockwave.drawCircle(0, 0, shockwave.radius);
+
+      if (!shockwave.hasHitPlayer) {
+        const pDx = shockwave.x - this.state.player.sprite.x;
+        const pDy = shockwave.y - this.state.player.sprite.y;
+        const pDist = Math.sqrt(pDx * pDx + pDy * pDy);
+        
+        if (Math.abs(pDist - shockwave.radius) < 15) {
+          shockwave.hasHitPlayer = true;
+          this.state.player.health = Math.max(0, this.state.player.health - 15);
+          this.state.ui.updatePlayerHealth(this.state.player.health, this.state.player.maxHealth);
+          if (this.state.player.health <= 0) {
+            this.state.handlePlayerDeath();
+          }
+        }
+      }
     });
     tween.onComplete.add(() => {
       shockwave.destroy();
@@ -211,6 +288,22 @@ class Boss {
           proj.y += proj.velocity.y * 2;
           break;
         }
+      }
+
+      // Check collision with player
+      const pDx = proj.x - this.state.player.sprite.x;
+      const pDy = proj.y - this.state.player.sprite.y;
+      const pDist = Math.sqrt(pDx * pDx + pDy * pDy);
+      
+      if (pDist < 20) {
+        this.state.player.health = Math.max(0, this.state.player.health - 20);
+        this.state.ui.updatePlayerHealth(this.state.player.health, this.state.player.maxHealth);
+        if (this.state.player.health <= 0) {
+          this.state.handlePlayerDeath();
+        }
+        proj.destroy();
+        this.projectiles.splice(i, 1);
+        continue;
       }
 
       // Remove if off screen

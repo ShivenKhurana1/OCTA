@@ -41,6 +41,8 @@ class Player {
     this.sprite.addChild(ammoImg);
 
     this.active = false;
+    this.maxHealth = 100;
+    this.health = this.maxHealth;
   }
 
   activate() {
@@ -139,12 +141,22 @@ class Player {
 
       this.state.soundManager.play('shoot', true);
 
+      // Decrease player health when shooting (only in boss battle)
+      if (this.state.boss) {
+        this.health = Math.max(0, this.health - 10);
+        this.state.ui.updatePlayerHealth(this.health, this.maxHealth);
+        
+        // Check if player died
+        if (this.health <= 0) {
+          this.state.handlePlayerDeath();
+        }
+      }
+
       if (this.ammo.length === 0) {
         this.state.setBallsOut(true);
       }
     }
   }
-
   giveBall(type, animate) {
     this.ammo.push(type);
     this.sprite.body.addToWorld();
@@ -267,6 +279,9 @@ class Player {
         target: CONSTANTS.PLAYER_SIZE * 1/8 + (level / 7) * (CONSTANTS.PLAYER_SIZE * 6/8)
       });
     }
+  }
+  restoreHealth() {
+    this.health = this.maxHealth;
   }
 }
 
